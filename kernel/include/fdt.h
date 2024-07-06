@@ -1,8 +1,7 @@
 #ifndef __FDT_H_
 #define __FDT_H_
 
-#include "types.h"
-#include <stdint.h>
+#include <types.h>
 
 // From: https://devicetree-specification.readthedocs.io
 struct fdt_header {

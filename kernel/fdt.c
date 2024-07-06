@@ -1,5 +1,5 @@
-#include "includes/fdt.h"
-#include "includes/string.h"
+#include <kernel/fdt.h>
+#include <string.h>
 
 const char fdt_header_labels[FDT_HEADER_ENTRIES][18] = {
 	"magic",
@@ -35,7 +35,7 @@ struct fdt_parser fdt_parser_init(struct fdt_header *header) {
 
 	char *s = ((u8*) header) + off_dt_strings;
 
-	for (size_t i = 0; i < size_dt_strings; i++) {
+	for (usize i = 0; i < size_dt_strings; i++) {
 		//puts(s+i); putc('\n');
 		if (*(s+i) == '#') {
 			if (streq(FDT_STR_ADDRESS_CELLS, s+i))
@@ -61,7 +61,7 @@ int fdt_parser_next_prop(struct fdt_parser *parser) {
 
 	if (ptr == NULL) {
 		ptr = parser->node_ptr + 1;
-		size_t node_name_len = strlen(ptr) + 1;
+		usize node_name_len = strlen(ptr) + 1;
 		ptr += FDT_ALIGN_U32(node_name_len);
 	}
 	else {
@@ -99,7 +99,7 @@ void fdt_parser_prop_string_list(struct fdt_parser *parser) {
 
 	u8 *s = (u8*) ptr;
 	print_dword(len); putc('\n');
-	for (size_t i = 0; i < len; i++) {
+	for (usize i = 0; i < len; i++) {
 		puts(s+i); putc('\n');
 		i += strlen(s+i);
 	}
@@ -147,7 +147,7 @@ int fdt_parser_next_node(struct fdt_parser *parser) {
 	if (type != FDT_BEGIN_NODE)
 		panic("FDT PARSE FAIL: EXPECTED FDT_BEGIN_NODE");
 
-	size_t node_name_len = strlen(ptr+1) + 1;
+	usize node_name_len = strlen(ptr+1) + 1;
 	ptr += FDT_ALIGN_U32(node_name_len) + 1;
 
 	for (;;) {

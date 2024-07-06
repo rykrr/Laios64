@@ -1,7 +1,7 @@
-#include "includes/fdt.h"
-#include "includes/string.h"
-#include "includes/int_utils.h"
-#include "includes/platform.h"
+#include <kernel/fdt.h>
+#include <kernel/bios.h>
+#include <kernel/platform.h>
+#include <endian.h>
 
 int has_prefix(const char *prefix, const char *str) {
 	return 0;
