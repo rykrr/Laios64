@@ -1,5 +1,7 @@
 #include <kernel/fdt.h>
+#include <kernel/bios.h>
 #include <string.h>
+#include <endian.h>
 
 const char fdt_header_labels[FDT_HEADER_ENTRIES][18] = {
 	"magic",
@@ -16,7 +18,7 @@ const char fdt_header_labels[FDT_HEADER_ENTRIES][18] = {
 
 void swap_fdt_struct_endianness(u32 *ptr, u8 entries) {
 	for (u8 i = 0; i < entries; i++)
-		ptr[i] = switch_endian_dword(ptr[i]);
+		ptr[i] = be32toh(ptr[i]);
 }
 
 struct fdt_parser fdt_parser_init(struct fdt_header *header) {
@@ -30,8 +32,8 @@ struct fdt_parser fdt_parser_init(struct fdt_header *header) {
 		.compatible_str_off = 0,
 	};
 
-	u32 off_dt_strings = switch_endian_dword(header->off_dt_strings);
-	u32 size_dt_strings = switch_endian_dword(header->size_dt_strings);
+	u32 off_dt_strings = be32toh(header->off_dt_strings);
+	u32 size_dt_strings = be32toh(header->size_dt_strings);
 
 	char *s = ((u8*) header) + off_dt_strings;
 
@@ -57,21 +59,21 @@ int fdt_parser_next_prop(struct fdt_parser *parser) {
 		return 0;
 
 	u32 *ptr = parser->prop_ptr;
-	u32 type = switch_endian_dword(*ptr);
+	u32 type = be32toh(*ptr);
 
 	if (ptr == NULL) {
 		ptr = parser->node_ptr + 1;
-		usize node_name_len = strlen(ptr) + 1;
+		usize node_name_len = strlen((const char*) ptr) + 1;
 		ptr += FDT_ALIGN_U32(node_name_len);
 	}
 	else {
 		ptr++; // Skip tag
-		u32 len = switch_endian_dword(*ptr++);
+		u32 len = be32toh(*ptr++);
 		ptr += FDT_ALIGN_U32(len) + 1;
 	}
 
 	for (;;) {
-		type = switch_endian_dword(*ptr);
+		type = be32toh(*ptr);
 		switch(type) {
 			case FDT_NOP:
 				ptr++;
@@ -91,8 +93,8 @@ void fdt_parser_prop_string_list(struct fdt_parser *parser) {
 		return;
 
 	u32 *ptr = parser->prop_ptr + 1;
-	u32 len = switch_endian_dword(*ptr++);
-	u32 off = switch_endian_dword(*ptr++);
+	u32 len = be32toh(*ptr++);
+	u32 off = be32toh(*ptr++);
 
 	if (off != parser->compatible_str_off)
 		return;
@@ -106,12 +108,12 @@ void fdt_parser_prop_string_list(struct fdt_parser *parser) {
 	putc('\n');
 }
 
-char *fdt_parser_prop_name(struct fdt_parser *parser) {
+const char *fdt_parser_prop_name(struct fdt_parser *parser) {
 	if (parser->prop_ptr == NULL)
 		return NULL;
 
-	u32 off_dt_strings = switch_endian_dword(parser->header->off_dt_strings);
-	u32 offset = switch_endian_dword(*(parser->prop_ptr + 2));
+	u32 off_dt_strings = be32toh(parser->header->off_dt_strings);
+	u32 offset = be32toh(*(parser->prop_ptr + 2));
 	return ((u8*) parser->header) + off_dt_strings + offset;
 }
 
@@ -134,24 +136,24 @@ int fdt_parser_next_node(struct fdt_parser *parser) {
 		return 0;
 
 	if (parser->node_ptr == NULL) {
-		u32 off_dt_struct = switch_endian_dword(parser->header->off_dt_struct);
+		u32 off_dt_struct = be32toh(parser->header->off_dt_struct);
 		fdt_parser_push(parser, ((u32*) parser->header) + (off_dt_struct >> 2));
 		return 1;
 	}
 
 	u32 *ptr = parser->node_ptr;
-	u32 type = switch_endian_dword(*ptr);
+	u32 type = be32toh(*ptr);
 
-	u32 off_dt_strings = switch_endian_dword(parser->header->off_dt_strings);
+	u32 off_dt_strings = be32toh(parser->header->off_dt_strings);
 
 	if (type != FDT_BEGIN_NODE)
 		panic("FDT PARSE FAIL: EXPECTED FDT_BEGIN_NODE");
 
-	usize node_name_len = strlen(ptr+1) + 1;
+	usize node_name_len = strlen((const char*)(ptr+1)) + 1;
 	ptr += FDT_ALIGN_U32(node_name_len) + 1;
 
 	for (;;) {
-		type = switch_endian_dword(*ptr);
+		type = be32toh(*ptr);
 		switch (type) {
 			case FDT_BEGIN_NODE:
 				fdt_parser_push(parser, ptr);
@@ -165,11 +167,11 @@ int fdt_parser_next_node(struct fdt_parser *parser) {
 			case FDT_PROP:
 				ptr++; // Skip tag
 
-				u32 len = switch_endian_dword(*ptr++);
-				u32 off = switch_endian_dword(*ptr++);
-				u32 size = switch_endian_dword(*ptr);
+				u32 len = be32toh(*ptr++);
+				u32 off = be32toh(*ptr++);
+				u32 size = be32toh(*ptr);
 
-				u32 off_dt_strings = switch_endian_dword(parser->header->off_dt_strings);
+				u32 off_dt_strings = be32toh(parser->header->off_dt_strings);
 				char *s = ((u8*) parser->header) + off_dt_strings;
 
 				if (off == parser->addr_cells_str_off)
@@ -202,8 +204,8 @@ u64 fdt_parser_parse_reg(struct fdt_parser *parser) {
 
 }
 
-char* fdt_parser_node_name(struct fdt_parser *parser) {
+const char* fdt_parser_node_name(struct fdt_parser *parser) {
 	if (parser->end)
 		return NULL;
-	return parser->node_ptr + 1;
+	return (const char*) (parser->node_ptr + 1);
 }

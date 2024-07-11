@@ -1,5 +1,4 @@
-#include "bios.s"
-
+#ifdef __COMPILE__
 .globl _vector_table
 _vector_table:
 _el0_syn_handler:
@@ -34,7 +33,7 @@ _el1_syn_handler:
 	mov x0, '\n'
 	mov x9, 0x09000000
 	str x0, [x9]
-	b _shutdown
+	b bios_shutdown
 	eret
 .balign 128
 _el1_irq_handler:
@@ -49,3 +48,4 @@ _el1_err_handler:
 	mov x0, xzr
 	eret
 .balign 128
+#endif

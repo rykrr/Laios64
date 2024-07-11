@@ -5,7 +5,7 @@
 
 u8 streq(const char *a, const char *b);
 usize strlen(const char *s);
-void* memset(void *s, u8 c, size_t n);
+void* memset(void *s, u8 c, usize n);
 
 /*** Non-standard functions ***/
 

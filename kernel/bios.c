@@ -1,11 +1,9 @@
 #include <kernel/bios.h>
 
-void putc(char c) {
-	_putc(c);
-}
+const char HEX_DIGITS[16] = "0123456789ABCDEF";
 
 void puts(const char *s) {
-	while (*s) putc(*s++);
+	while (*s) bios_putc(*s++);
 }
 
 void print_byte(u8 x) {
@@ -27,3 +25,11 @@ void print_qword(u64 x) {
 	print_dword((u32)((x >> 32) & 0xFFFFFFFF));
 	print_dword((u32)(x & 0xFFFFFFFF));
 }
+
+void panic(const char *msg) {
+	puts("\n\n!!! PANIC !!!\n\n");
+	puts(msg);
+	puts("\n\n\n\n");
+	bios_shutdown();
+}
+

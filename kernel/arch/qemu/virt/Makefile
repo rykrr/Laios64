@@ -1,12 +1,7 @@
 ################################################################################
 
-TOOLCHAIN	= aarch64-none-elf
+TOOLCHAIN	= aarch64-elf
 TARGET		= aarch64-unknown-none
-
-################################################################################
-
-CC	= $(TOOLCHAIN)-gcc
-CFLAGS	= -march=armv8-a+nofp -D__TARGET_QEMU_VIRT_ -ffreestanding -Tlinker.ld -nostdlib
 
 ################################################################################
 
@@ -18,15 +13,21 @@ OBJDUMP	= $(TOOLCHAIN)-objdump
 ################################################################################
 
 BASEDIR = ../../../..
+SYSROOT = $(BASEDIR)/sysroot
 SOURCES	= $(shell find $(BASEDIR)/kernel -type f -regex '.*\.r?s')
 SOURCES	= $(shell find $(BASEDIR)/kernel -type f -regex '.*\.[cs]')
 
 ################################################################################
 
-OUTPUT	= kernel.o
-KERNEL	= kernel.img
-SYMBOLS	= kernel.sym
-SERIAL	= serial.log
+OUTPUT	= $(SYSROOT)/kernel.o
+KERNEL	= $(SYSROOT)/kernel.img
+SYMBOLS	= $(SYSROOT)/kernel.sym
+SERIAL	= $(SYSROOT)/serial.log
+
+################################################################################
+
+CC	= $(TOOLCHAIN)-gcc
+CFLAGS	= -march=armv8-a+nofp -D__TARGET_QEMU_VIRT_ -ffreestanding -Tlinker.ld -nostdlib --sysroot=$(SYSROOT) -isystem $(SYSROOT)/include
 
 ################################################################################
 

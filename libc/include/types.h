@@ -1,7 +1,9 @@
-#ifndef __TYPES_H_
-#define __TYPES_H_
+#ifndef __TYPES_H__
+#define __TYPES_H__
 
+#ifndef NULL
 #define NULL ((void*) 0)
+#endif
 
 typedef char		i8;
 typedef int			i16;

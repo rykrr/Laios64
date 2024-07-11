@@ -3,12 +3,15 @@
 
 #include <types.h>
 
-extern const char * HEX_DIGITS;
+extern const char HEX_DIGITS[16];
 
-void shutdown();
+void bios_shutdown();
 
-void _putc(char);
-void putc(char);
+void panic(const char*);
+
+void bios_putc(char);
+#define putc bios_putc
+
 void puts(const char*);
 
 void print_byte(u8);

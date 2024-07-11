@@ -1,6 +1,4 @@
-#include "bios.s"
-#include "exception.s"
-
+#ifdef __COMPILE__
 .section .text.boot
 .globl _start
 _start:
@@ -28,9 +26,10 @@ _clear_bss:
 
 _main:
 	bl kmain
-	bl _shutdown
+	bl bios_shutdown
 
 .globl _start
 _halt:
 	wfi
 	b _halt
+#endif

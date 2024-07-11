@@ -54,10 +54,10 @@ struct fdt_parser {
 struct fdt_parser fdt_parser_init(struct fdt_header*);
 
 int fdt_parser_next_node(struct fdt_parser*);
-char* fdt_parser_node_name(struct fdt_parser*);
+const char* fdt_parser_node_name(struct fdt_parser*);
 
 int fdt_parser_next_prop(struct fdt_parser*);
-char* fdt_parser_prop_name(struct fdt_parser*);
+const char* fdt_parser_prop_name(struct fdt_parser*);
 void fdt_parser_prop_string_list(struct fdt_parser*);
 
 int fdt_parser_next_property(struct fdt_parser*);

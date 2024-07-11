@@ -1,21 +1,15 @@
 #include <kernel/fdt.h>
 #include <kernel/bios.h>
 #include <kernel/platform.h>
+#include <string.h>
 #include <endian.h>
 
 int has_prefix(const char *prefix, const char *str) {
 	return 0;
 }
 
-void panic(const char *msg) {
-	puts("\n\n!!! PANIC !!!\n\n");
-	puts(msg);
-	puts("\n\n\n\n");
-	_shutdown();
-}
-
 void print_fdt_header(const struct fdt_header *fdt_header) {
-	uint32_t *dword_header = (uint32_t *) fdt_header;
+	u32 *dword_header = (u32 *) fdt_header;
 
 	puts("Flat Device Tree Header\n");
 
@@ -40,7 +34,7 @@ extern inline void print_prefix_spaces(int d) {
 		putc(' ');
 }
 
-extern inline void prd(int d, const char *c, uint32_t dword) {
+extern inline void prd(int d, const char *c, u32 dword) {
 	print_prefix_spaces(d);
 	puts(c);
 	puts(": ");
@@ -64,10 +58,12 @@ void memory_init(struct fdt_header *header) {
 void kmain() {
 	puts("\n\n================================\n");
 	puts("Hello World.\n");
+	puts("Test: "); print_byte(strlen("Test"));
+
 	puts("Test: ");
 	print_dword(0xDEADC0DE);
 	putc('\n');
-	print_dword(switch_endian_dword(0xDEADC0DE));
+	print_dword(be32toh(0xDEADC0DE));
 	puts("\n================================\n\n");
 
 	u32 x;
