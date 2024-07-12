@@ -26,7 +26,6 @@ SECTIONS
 	__bss_start = .;
 	.bss : {
 		bss = .;
-		*(COMMON)
 		*(.bss)
 	}
 

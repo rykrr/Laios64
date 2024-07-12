@@ -36,6 +36,7 @@ struct fdt_parser fdt_parser_init(struct fdt_header *header) {
 	u32 size_dt_strings = be32toh(header->size_dt_strings);
 
 	char *s = ((u8*) header) + off_dt_strings;
+	puts("String 0: "); puts(s); putc('\n');
 
 	for (usize i = 0; i < size_dt_strings; i++) {
 		puts(s+i); putc('\n');

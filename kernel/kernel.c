@@ -23,8 +23,7 @@ void print_fdt_header(const struct fdt_header *fdt_header) {
 		for (; s < 18; s++)
 			putc(' ');
 
-		puts(": ");
-		print_dword(dword_header[i]);
+		print_dword(be32toh(dword_header[i]));
 		putc('\n');
 	}
 }
@@ -64,7 +63,6 @@ void memory_init(struct fdt_header *header) {
 void kmain() {
 	puts("\n\n================================\n");
 	puts("Hello World.\n");
-
 	puts("Test: "); print_dword(0xAABBCCDD); putc('\n');
 	puts("Test: "); print_dword(be32toh(htobe32(0xAABBCCDD)));
 	puts("\n================================\n\n");

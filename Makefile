@@ -43,6 +43,7 @@ SYSTEM_HEADERS			:= $(SYSTEM_KERNEL_HEADERS) $(SYSTEM_LIBC_HEADERS)
 ################################################################################
 
 CFLAGS := $(CFLAGS) -ffreestanding --sysroot=$(SYSROOT) -isystem $(SYSTEM_INCLUDE_DIR)
+CFLAGS := $(CFLAGS) -Wall
 CFLAGS := $(CFLAGS) -g -D__TARGET_QEMU_VIRT__ -march=armv8-a+nofp -nostdlib
 
 KERNEL_CFLAGS := $(CFLAGS) -T$(ARCHDIR)/linker.ld
