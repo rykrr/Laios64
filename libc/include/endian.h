@@ -23,5 +23,4 @@ u32 switch_endian_dword(u32);
 #define le64toh(le) (le)
 #endif
 
-
 #endif

@@ -38,7 +38,7 @@ struct fdt_parser fdt_parser_init(struct fdt_header *header) {
 	char *s = ((u8*) header) + off_dt_strings;
 
 	for (usize i = 0; i < size_dt_strings; i++) {
-		//puts(s+i); putc('\n');
+		puts(s+i); putc('\n');
 		if (*(s+i) == '#') {
 			if (streq(FDT_STR_ADDRESS_CELLS, s+i))
 				parser.addr_cells_str_off = i;

@@ -9,7 +9,7 @@ int has_prefix(const char *prefix, const char *str) {
 }
 
 void print_fdt_header(const struct fdt_header *fdt_header) {
-	u32 *dword_header = (u32 *) fdt_header;
+	u32 *dword_header = (u32*) fdt_header;
 
 	puts("Flat Device Tree Header\n");
 
@@ -47,7 +47,13 @@ void khalt() {
 }
 
 void memory_init(struct fdt_header *header) {
-	struct fdt_parser parser = fdt_parser_init((struct fdt_header*) RAM_BASE);
+	if (be32toh(header->magic) != 0xD00DFEED) {
+		panic("Could not find flat device tree header.");
+	}
+
+	struct fdt_parser parser = fdt_parser_init(header);
+
+	puts(fdt_parser_node_name(&parser)); putc('\n');
 
 	while (!str_starts_with(fdt_parser_node_name(&parser), "memory")) {
 		if (!fdt_parser_next_node(&parser))
@@ -58,19 +64,17 @@ void memory_init(struct fdt_header *header) {
 void kmain() {
 	puts("\n\n================================\n");
 	puts("Hello World.\n");
-	puts("Test: "); print_byte(strlen("Test"));
 
-	puts("Test: ");
-	print_dword(0xDEADC0DE);
-	putc('\n');
-	print_dword(be32toh(0xDEADC0DE));
+	puts("Test: "); print_dword(0xAABBCCDD); putc('\n');
+	puts("Test: "); print_dword(be32toh(htobe32(0xAABBCCDD)));
 	puts("\n================================\n\n");
 
 	u32 x;
 	asm("mrs %0,CurrentEL" : "=r"(x));
-	print_dword(x >> 2); putc('\n');
+	puts("CurrentEL: "); print_dword(x >> 2); putc('\n');
 	asm("mrs %0,vbar_el1" : "=r"(x));
-	print_dword(x); putc('\n');
+	puts("VBAR EL1:  "); print_dword(x); putc('\n');
 
+	print_fdt_header((struct fdt_header*) RAM_BASE);
 	memory_init((struct fdt_header*) RAM_BASE);
 }

@@ -7,6 +7,7 @@ ARCHDIR		= kernel/arch/qemu/virt
 ################################################################################
 
 AS	:= $(TOOLCHAIN)-as
+AR	:= $(TOOLCHAIN)-ar
 CC	:= $(TOOLCHAIN)-gcc
 GDB	:= $(TOOLCHAIN)-gdb
 OBJCOPY	:= $(TOOLCHAIN)-objcopy
@@ -27,6 +28,8 @@ KERNEL			:= $(SYSROOT)/kernel.img
 
 LIBC_HEADERS	:= $(shell find libc/include -type f)
 LIBC_SOURCES	:= $(shell find libc/ -type f -regex '.*\.[Sc]')
+LIBC_OBJECTS	:= $(patsubst libc/%.c,libc/%.o,$(LIBC_SOURCES))
+LIBC_OBJECTS	:= $(patsubst libc/%.S,libc/%.o,$(LIBC_OBJECTS))
 LIBC			:= $(LIBROOT)/libc.a
 LIBK			:= $(LIBROOT)/libk.a
 
@@ -40,22 +43,25 @@ SYSTEM_HEADERS			:= $(SYSTEM_KERNEL_HEADERS) $(SYSTEM_LIBC_HEADERS)
 ################################################################################
 
 CFLAGS := $(CFLAGS) -ffreestanding --sysroot=$(SYSROOT) -isystem $(SYSTEM_INCLUDE_DIR)
-CFLAGS := $(CFLAGS) -D__TARGET_QEMU_VIRT__ -march=armv8-a+nofp
+CFLAGS := $(CFLAGS) -g -D__TARGET_QEMU_VIRT__ -march=armv8-a+nofp -nostdlib
 
-KERNEL_CFLAGS := $(CFLAGS) -T$(ARCHDIR)/linker.ld -nostdlib -static -lk
-LIBC_CFLAGS := $(CFLAGS) -D__LIBC__ -nostdlib -fPIC -shared
-LIBK_CFLAGS := $(CFLAGS) -D__LIBK__ -nostdlib -fPIC -shared
+KERNEL_CFLAGS := $(CFLAGS) -T$(ARCHDIR)/linker.ld
+LIBC_CFLAGS := $(CFLAGS) -D__LIBC__
+LIBK_CFLAGS := $(CFLAGS) -D__LIBK__
+
+KERNEL_LIBS := -lk
 
 ################################################################################
 
 $(KERNEL): $(KERNEL_OBJECT)
-	$(OBJCOPY) --strip-all -O binary $^ $@
+	cp $< $@
+	#$(OBJCOPY) --strip-all -O binary $^ $@
 
 $(KERNEL_SYMBOLS): $(KERNEL_OBJECT)
 	$(OBJCOPY) --only-keep-debug $< $@
 
 $(KERNEL_OBJECT): $(KERNEL_OBJECTS) $(LIBK_TARGET) $(SYSTEM_HEADERS)
-	$(CC) $(KERNEL_CFLAGS) $(KERNEL_OBJECTS) -o $@
+	$(CC) $(KERNEL_CFLAGS) $(KERNEL_OBJECTS) -o $@ $(KERNEL_LIBS)
 
 kernel/%.o: kernel/%.c $(SYSTEM_HEADERS) $(LIBK)
 	$(CC) -c $(KERNEL_CFLAGS) $< -o $@
@@ -63,13 +69,16 @@ kernel/%.o: kernel/%.c $(SYSTEM_HEADERS) $(LIBK)
 kernel/%.o: kernel/%.S $(SYSTEM_HEADERS) $(LIBK)
 	$(CC) -c $(KERNEL_CFLAGS) $< -o $@
 
-$(LIBC): $(LIBC_SOURCES) $(SYSTEM_HEADERS)
-	mkdir -p $(LIBROOT)
-	$(CC) $(LIBC_CFLAGS) $(LIBC_SOURCES) -o $@
+libc/%.o: libc/%.c $(SYSTEM_HEADERS) $(LIBC_HEADERS)
+	$(CC) -c $(LIBK_CFLAGS) $< -o $@
 
-$(LIBK): $(LIBC_SOURCES) $(SYSTEM_HEADERS)
+libc/%.o: libc/%.S $(SYSTEM_HEADERS) $(LIBC_HEADERS)
+	$(CC) -c $(LIBK_CFLAGS) $< -o $@
+
+$(LIBK): $(LIBC_OBJECTS)
+	@echo $(LIBC_OBJECTS)
 	mkdir -p $(LIBROOT)
-	$(CC) $(LIBK_CFLAGS) $(LIBC_SOURCES) -o $@
+	$(AR) rcs -o $@ $(LIBC_OBJECTS)
 
 $(SYSTEM_INCLUDE_DIR)/kernel/%.h: kernel/include/%.h
 	@[ -d $(SYSTEM_INCLUDE_DIR) ] || mkdir -p $(SYSTEM_INCLUDE_DIR)/kernel
