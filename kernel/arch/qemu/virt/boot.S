@@ -3,7 +3,7 @@
 .globl _start
 _start:
 	// Place stack before _start
-	ldr x5, =_start
+	ldr x5, =__stack_top
 	mov sp, x5
 
 	// Set exception table

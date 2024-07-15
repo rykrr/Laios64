@@ -1,5 +1,6 @@
 #include <kernel/fdt.h>
 #include <kernel/bios.h>
+#include <stdio.h>
 #include <string.h>
 #include <endian.h>
 
@@ -36,10 +37,8 @@ struct fdt_parser fdt_parser_init(struct fdt_header *header) {
 	u32 size_dt_strings = be32toh(header->size_dt_strings);
 
 	char *s = ((u8*) header) + off_dt_strings;
-	puts("String 0: "); puts(s); putc('\n');
 
 	for (usize i = 0; i < size_dt_strings; i++) {
-		puts(s+i); putc('\n');
 		if (*(s+i) == '#') {
 			if (streq(FDT_STR_ADDRESS_CELLS, s+i))
 				parser.addr_cells_str_off = i;
@@ -101,9 +100,9 @@ void fdt_parser_prop_string_list(struct fdt_parser *parser) {
 		return;
 
 	u8 *s = (u8*) ptr;
-	print_dword(len); putc('\n');
+	printf("Prop String List Length: %04X\n", len);
 	for (usize i = 0; i < len; i++) {
-		puts(s+i); putc('\n');
+		printf("%s\n", s+i);
 		i += strlen(s+i);
 	}
 	putc('\n');
