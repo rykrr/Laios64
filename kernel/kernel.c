@@ -8,19 +8,9 @@
 
 void print_fdt_header(const struct fdt_header *fdt_header) {
 	u32 *dword_header = (u32*) fdt_header;
-
-	char spaces[20] = {' ', [19] = '\0'};
-
 	puts("Flat Device Tree Header");
-
 	for (int i = 0; i < FDT_HEADER_ENTRIES; i++)
 		printf("%-20s: %08X\n", fdt_header_labels[i], be32toh(dword_header[i]));
-}
-
-extern inline void prd(int d, const char *c, u32 dword) {
-	for (usize i = 0; i < d << 2; i++)
-		putc(' ');
-	printf("%s: %8X\n", c, d);
 }
 
 void khalt() {
@@ -28,9 +18,8 @@ void khalt() {
 }
 
 void memory_init(struct fdt_header *header) {
-	if (be32toh(header->magic) != 0xD00DFEED) {
+	if (be32toh(header->magic) != 0xD00DFEED)
 		panic("Could not find flat device tree header.");
-	}
 
 	struct fdt_parser parser = fdt_parser_init(header);
 
@@ -45,10 +34,6 @@ void memory_init(struct fdt_header *header) {
 const char *DIV = "================================";
 
 void kmain() {
-	putc('\n');
-	puts(DIV);
-
-	printf("Hello world!\n");
 	printf("Test: AABBCCDD = %X\n", 0xAABBCCDD);
 	printf("Test: DDCCBBAA = %X\n", htobe32(0xAABBCCDD));
 	printf("Test: deadbeef = %x\n", 0xDEADBEEF);

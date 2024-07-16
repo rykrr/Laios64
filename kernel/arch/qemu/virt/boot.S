@@ -25,6 +25,12 @@ _clear_bss:
 	cbnz w6, 1b
 
 _main:
+	adr x0, _div_str
+	bl bios_puts
+	adr x0, _hello_str
+	bl bios_puts
+	adr x0, _div_str
+	bl bios_puts
 	bl kmain
 	bl bios_shutdown
 
@@ -32,4 +38,12 @@ _main:
 _halt:
 	wfi
 	b _halt
+
+.section .rodata
+_div_str:
+	.asciz "================================"
+
+_hello_str:
+	.asciz "Hello World!"
+
 #endif
