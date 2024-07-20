@@ -8,92 +8,96 @@
 const char LOWER_HEX_DIGITS[16] = "0123456789abcdef";
 const char UPPER_HEX_DIGITS[16] = "0123456789ABCDEF";
 
-void print_byte(u8 x) {
-	bios_putc(UPPER_HEX_DIGITS[(x >> 4) & 0x0F]);
-	bios_putc(UPPER_HEX_DIGITS[x & 0x0F]);
-}
-
-void print_word(u16 x) {
-	print_byte((u8)((x >> 8) & 0xFF));
-	print_byte((u8)(x & 0xFF));
-}
-
-void print_dword(u32 x) {
-	print_word((u16)((x >> 16) & 0xFFFF));
-	print_word((u16)(x & 0xFFFF));
-}
-
-void print_qword(u64 x) {
-	print_dword((u32)((x >> 32) & 0xFFFFFFFF));
-	print_dword((u32)(x & 0xFFFFFFFF));
-}
-
 void print_hex(u64 x, i8 width, bool zero_pad, bool uppercase) {
 	#define NIBBLE 4
 	#define NUM_DIGITS 16
 	#define HIGHEST_NIBBLE_SHIFT 60
 
-	static char buf[NUM_DIGITS];
-	bool left_pad = width < 0;
+	static char buf[NUM_DIGITS+1] = {[NUM_DIGITS] = '\0'};
 	char *hex_digits = uppercase? UPPER_HEX_DIGITS : LOWER_HEX_DIGITS;
 
-	if (left_pad)
+	if (width < 0)
 		width = -width;
-	else if (width > NUM_DIGITS)
+
+	if (width > NUM_DIGITS)
 		width = NUM_DIGITS;
 
-	u8 start = NUM_DIGITS - (left_pad? 0 : width);
+	u8 start = NUM_DIGITS - width;
 
 	for (u8 i = 0; i < NUM_DIGITS; i++) {
 		u8 value = (x >> HIGHEST_NIBBLE_SHIFT) & 0x0F;
-		buf[i] = hex_digits[value];
-		
+
 		if (value && i < start)
 			start = i;
+
+		zero_pad |= value;
+		buf[i] = zero_pad? hex_digits[value] : ' ';
 
 		x <<= NIBBLE;
 	}
 
-	if (left_pad) {
-		for (u8 i = start; i < NUM_DIGITS; i++)
-			putc(buf[i]);
+	bios_puts2(buf + start);
 
-		for (u8 i = NUM_DIGITS - start; i < width; i++)
-			putc(' ');
-	}
-	else {
-		bool space = !zero_pad;
-		for (u8 i = start; i < NUM_DIGITS; i++) {
-			space &= buf[i] == '0' && i < NUM_DIGITS - 1;
-			putc(space? ' ' : buf[i]);
-		}
-	}
-
-	#undef NIBBLE
-	#undef NUM_DIGITS
 	#undef HIGHEST_NIBBLE_SHIFT
+	#undef NUM_DIGITS
+	#undef NIBBLE
 }
 
-void print_string(const char *s, i32 width) {
-	bool left_pad = width < 0;
-	usize len = strlen(s);
+void print_decimal(i32 x, i32 width) {
+	#define NUM_DIGITS 10
+	static char buf[NUM_DIGITS+2] = {[NUM_DIGITS+1] = '\0'};
+	bool negative = x < 0;
+	u8 start = NUM_DIGITS;
 
-	if (left_pad) {
+	if (width < 0)
 		width = -width;
 
-		while (*s)
-			putc(*s++);
+	if (width > NUM_DIGITS+1)
+		width = NUM_DIGITS+1;
 
-		for (usize i = len; i < width; i++)
-			putc(' ');
-	}
-	else {
-		for (usize i = width - len; i < width; i++)
-			putc(' ');
+	if (negative)
+		x = -x;
 
-		while (*s)
-			putc(*s++);
+	do {
+		buf[start] = UPPER_HEX_DIGITS[x % 10];
+		x /= 10;
+	} while(x && start--);
+
+	if (negative)
+		buf[--start] = '-';
+
+	u8 len2 = NUM_DIGITS - start + 1;
+
+	while (len2 < width) {
+		buf[--start] = ' ';
+		len2++;
 	}
+
+	bios_puts2(buf + start);
+	#undef NUM_DIGITS
+}
+
+void print_string(const char *s, i32 width, bool truncate) {
+	bool right_pad = width < 0;
+	usize len = strlen(s);
+
+	if (width < 0) {
+		width = -width;
+		right_pad = true;
+
+		if (truncate && width < len)
+			s += len - width;
+	}
+
+	for (usize i = len; !right_pad && i < width; i++)
+		putc(' ');
+
+	for (usize i = 0; *s && (!truncate || i < width); i++)
+		putc(*s++);
+
+	if (right_pad && len < width)
+		for (usize i = 0; i < width - len; i++)
+			putc(' ');
 }
 
 void printf(const char *fmt, ...) {
@@ -103,6 +107,7 @@ void printf(const char *fmt, ...) {
 	i32 width = 1;
 
 	bool special = false;
+	bool truncate = false;
 	bool zero_pad = false;
 
 	while (*fmt) {
@@ -129,7 +134,12 @@ void printf(const char *fmt, ...) {
 			}
 			case 's': {
 				const char *s = (const char*) va_arg(va, const char*);
-				print_string(s, width);
+				print_string(s, width, truncate);
+				break;
+			}
+			case 'd': {
+				i32 value = (i32) va_arg(va, i32);
+				print_decimal(value, width);
 				break;
 			}
 			case 'c': {
@@ -138,6 +148,11 @@ void printf(const char *fmt, ...) {
 			}
 			case '-': {
 				width = -1;
+				special = true;
+				break;
+			}
+			case '.': {
+				truncate = true;
 				special = true;
 				break;
 			}

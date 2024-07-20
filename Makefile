@@ -46,7 +46,7 @@ CFLAGS := $(CFLAGS) -ffreestanding --sysroot=$(SYSROOT) -isystem $(SYSTEM_INCLUD
 CFLAGS := $(CFLAGS) -Wall
 CFLAGS := $(CFLAGS) -g -D__TARGET_QEMU_VIRT__ -march=armv8-a+nofp -nostdlib
 
-KERNEL_CFLAGS := $(CFLAGS) -T$(ARCHDIR)/linker.ld
+KERNEL_CFLAGS := $(CFLAGS) -T$(ARCHDIR)/linker.ld -D__LIBK__
 LIBC_CFLAGS := $(CFLAGS) -D__LIBC__
 LIBK_CFLAGS := $(CFLAGS) -D__LIBK__
 
@@ -71,10 +71,10 @@ kernel/%.o: kernel/%.S $(SYSTEM_HEADERS) $(LIBK)
 	$(CC) -c $(KERNEL_CFLAGS) $< -o $@
 
 libc/%.o: libc/%.c $(SYSTEM_HEADERS) $(LIBC_HEADERS)
-	$(CC) -c $(LIBK_CFLAGS) $< -o $@
+	$(CC) $(LIBK_CFLAGS) -c $< -o $@
 
 libc/%.o: libc/%.S $(SYSTEM_HEADERS) $(LIBC_HEADERS)
-	$(CC) -c $(LIBK_CFLAGS) $< -o $@
+	$(CC) $(LIBK_CFLAGS) -c $< -o $@
 
 $(LIBK): $(LIBC_OBJECTS)
 	@echo $(LIBC_OBJECTS)

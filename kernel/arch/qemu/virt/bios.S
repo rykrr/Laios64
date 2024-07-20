@@ -19,6 +19,16 @@ bios_puts:
 	str w10, [x9]
 	ret
 
+.globl bios_puts2
+bios_puts2:
+	mov x9, PL011_UART_WRITE
+1:	ldrb w10, [x0]
+	cbz w10, 2f
+	str w10, [x9]
+	add x0, x0, #1
+	b 1b
+2:	ret
+
 .globl bios_shutdown
 bios_shutdown:
 	ldr x0, =0x84000008

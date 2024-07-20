@@ -1,9 +1,8 @@
-#include <stdio.h>
 #include <types.h>
 
-int atoi(const char *nstr) {
+i64 atoi(const char *nstr) {
 	i64 value = 0;
-	i64 sign = 1;
+	i8 sign = 1;
 
 	if (*nstr && *nstr == '-') {
 		sign = -1;

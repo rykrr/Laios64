@@ -9,6 +9,7 @@ void panic(const char*);
 
 void bios_putc(char);
 void bios_puts(const char*);
+void bios_puts2(const char*);
 
 void print_byte(u8);
 void print_word(u16);

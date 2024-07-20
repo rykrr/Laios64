@@ -25,13 +25,21 @@ _clear_bss:
 	cbnz w6, 1b
 
 _main:
+	// Print hello world banner.
 	adr x0, _div_str
 	bl bios_puts
 	adr x0, _hello_str
 	bl bios_puts
 	adr x0, _div_str
 	bl bios_puts
+	mov x0, #0xA
+	bl bios_putc
+
+	// Call C main function.
 	bl kmain
+	svc #1
+
+	// Shutdown and exit.
 	bl bios_shutdown
 
 .globl _start
