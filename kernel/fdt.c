@@ -1,5 +1,6 @@
 #include <kernel/fdt.h>
 #include <kernel/bios.h>
+#include <kernel/stdio.h>
 #include <stdio.h>
 #include <string.h>
 #include <endian.h>
@@ -209,3 +210,20 @@ const char* fdt_parser_node_name(struct fdt_parser *parser) {
 		return NULL;
 	return (const char*) (parser->node_ptr + 1);
 }
+
+#define __MODULE_NAME__ "fdt"
+void fdt_parser_print(struct fdt_parser *parser) {
+	kputs("Parser State");
+	kprintf("node_ptr:   %8X\n", (u32) parser->node_ptr);
+	kprintf("prop_ptr:   %8X\n", (u32) parser->prop_ptr);
+	kprintf("depth:      %8d\n", (u32) parser->depth);
+	kprintf("addr_cells: [ ");
+	for (usize i = 0; i < parser->depth; i++)
+		printf("%d:%d ", i, parser->addr_cells[i]);
+	printf("]\n");
+	kprintf("size_cells: [ ");
+	for (usize i = 0; i < parser->depth; i++)
+		printf("%d ", parser->size_cells[i]);
+	printf("]\n");
+}
+#undef __MODULE_NAME__

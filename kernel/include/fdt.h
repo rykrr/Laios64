@@ -1,5 +1,5 @@
-#ifndef __FDT_H_
-#define __FDT_H_
+#ifndef __FDT_H__
+#define __FDT_H__
 
 #include <types.h>
 
@@ -38,7 +38,7 @@ struct fdt_reserve_entry {
 
 #define FDT_PARSER_MAX_DEPTH 8
 
-struct fdt_parser {
+typedef struct fdt_parser {
 	struct fdt_header *header;
 	u32 *node_ptr;
 	u32 *prop_ptr;
@@ -49,7 +49,7 @@ struct fdt_parser {
 	u8 end;
 	u8 addr_cells[FDT_PARSER_MAX_DEPTH];
 	u8 size_cells[FDT_PARSER_MAX_DEPTH];
-};
+} fdt_parser;
 
 struct fdt_parser fdt_parser_init(struct fdt_header*);
 
@@ -60,35 +60,32 @@ int fdt_parser_next_prop(struct fdt_parser*);
 const char* fdt_parser_prop_name(struct fdt_parser*);
 void fdt_parser_prop_string_list(struct fdt_parser*);
 
-int fdt_parser_next_property(struct fdt_parser*);
-
-void fdt_parseri(struct fdt_header*);
+void fdt_parser_print(struct fdt_parser *parser);
 
 /****************************/
 /** FDT Helper Definitions **/
 /****************************/
 
-//#define FDT_ALIGN_U32(x) ((x + sizeof(u32) - 1) & ~(sizeof(u32) - 1))
 #define FDT_ALIGN_U32(x) ((x >> 2) + !!(x & 3))
 
 /***************************/
 /** FDT Token Definitions **/
 /***************************/
 
-#define FDT_BEGIN_NODE 0x00000001
-#define FDT_END_NODE 0x00000002
-#define FDT_PROP 0x00000003
-#define FDT_NOP 0x00000004
-#define FDT_END 0x00000009
+#define FDT_BEGIN_NODE 1
+#define FDT_END_NODE 2
+#define FDT_PROP 3
+#define FDT_NOP 4
+#define FDT_END 9
 
 /************************/
 /** FDT Common Strings **/
 /************************/
 
-#define FDT_STR_REG		"reg"
-#define FDT_STR_COMPATIBLE	"compatible"
-#define FDT_STR_SIZE_CELLS	"#size-cells"
-#define FDT_STR_ADDRESS_CELLS	"#address-cells"
-#define FDT_STR_INTERRUPT_CELLS	"#interrupt-cells"
+#define FDT_STR_REG "reg"
+#define FDT_STR_COMPATIBLE "compatible"
+#define FDT_STR_SIZE_CELLS "#size-cells"
+#define FDT_STR_ADDRESS_CELLS "#address-cells"
+#define FDT_STR_INTERRUPT_CELLS "#interrupt-cells"
 
 #endif

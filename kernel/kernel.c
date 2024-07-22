@@ -1,17 +1,15 @@
 #include <kernel/fdt.h>
 #include <kernel/bios.h>
+#include <kernel/stdio.h>
 #include <kernel/platform.h>
 #include <stdio.h>
 #include <string.h>
 #include <endian.h>
 #include <stdlib.h>
 
+#define __MODULE_NAME__ "kmain"
+
 #define DIV "================================"
-
-#define xkprintf(fmt, ...) \
-	printf("[%-20s] " fmt, __FILE_NAME__, ##__VA_ARGS__)
-
-#define xkputs(s) kprintf("%s\n", s)
 
 void print_fdt_header(const struct fdt_header *fdt_header) {
 	u32 *dword_header = (u32*) fdt_header;
@@ -35,7 +33,8 @@ void memory_init(struct fdt_header *header) {
 			panic("Could not find memory node in device tree.");
 	}
 
-	kputs(fdt_parser_node_name(&parser));
+	kprintf("Memory Startup: %s\n", fdt_parser_node_name(&parser));
+	fdt_parser_print(&parser);
 }
 
 void test() {
@@ -45,23 +44,7 @@ void test() {
 void kmain() {
 	kputs(DIV);
 
-	kprintf("Test: AABBCCDD = %X\n", sizeof(u64));
-	kprintf("Test: AABBCCDD = %X\n", 0xAABBCCDD);
-	kprintf("Test: DDCCBBAA = %X\n", htobe32(0xAABBCCDD));
-	kprintf("Test: deadbeef = %x\n", 0xDEADBEEF);
-	kprintf("Test:     BEEF = %8X\n", 0xBEEF);
-
-	kprintf("Test: 0123456789ABCDEF = %X\n", 0x012345678ABCDEF);
-
-	kprintf("Test: atoi(\"64\")  = %d\n", atoi("64"));
-	kprintf("Test: atoi(\"64\")  = %4d\n", atoi("64"));
-	kprintf("Test: atoi(\"-64\") = %d\n", atoi("-64"));
-	kprintf("Test: atoi(\"-64\") = %4d\n", atoi("-64"));
-	kprintf("Test: atoi(\"1234567890\")  = %11d\n", atoi("1234567890"));
-	kprintf("Test: atoi(\"-1234567890\") = %11d\n", atoi("-1234567890"));
-	kprintf("Test: atoi(\"5\")           = %90d\n", atoi("5"));
-
-	kprintf("Test: [%.8s] [%-.8s]\n", "0123456789ABCDEF", "0123456789ABCDEF");
+	kprintf("%X %X\n", 5, 9);
 
 	kputs(DIV);
 
@@ -82,3 +65,5 @@ void kmain() {
 	kputs(DIV);
 }
 
+
+#undef __MODULE_NAME__

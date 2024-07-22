@@ -15,6 +15,7 @@ void print_hex(u64 x, i8 width, bool zero_pad, bool uppercase) {
 
 	static char buf[NUM_DIGITS+1] = {[NUM_DIGITS] = '\0'};
 	char *hex_digits = uppercase? UPPER_HEX_DIGITS : LOWER_HEX_DIGITS;
+	bool zero = !x;
 
 	if (width < 0)
 		width = -width;
@@ -35,6 +36,9 @@ void print_hex(u64 x, i8 width, bool zero_pad, bool uppercase) {
 
 		x <<= NIBBLE;
 	}
+
+	if (zero)
+		buf[NUM_DIGITS-1] = '0';
 
 	bios_puts2(buf + start);
 
