@@ -95,7 +95,7 @@ DISPLAY	?= :0.0
 SERIAL	= /tmp/serial
 
 QEMU		= DISPLAY=$(DISPLAY) qemu-system-aarch64
-QEMU_ARGS	= -M virt -m 1G -cpu cortex-a72 -kernel $(KERNEL)
+QEMU_ARGS	= -M virt -m 512M -cpu cortex-a72 -kernel $(KERNEL)
 
 ################################################################################
 

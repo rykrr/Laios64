@@ -1,11 +1,12 @@
 ENTRY(_start)
 
-FLASH_START = 0x000100000;
-RAM_START = 0x040100000;
-
 SECTIONS
 {
-	. = RAM_START;
+	. = 0x40000000;
+	__fdt_header = .;
+
+	. += 0x00100000;
+	__kernel_start = .;
 
 	.startup : {
 		KEEP(*(.text.boot))
@@ -39,4 +40,6 @@ SECTIONS
 	__stack_bottom = .;
 	. += 0x10000;
 	__stack_top = .;
+
+	__kernel_end = .;
 }
