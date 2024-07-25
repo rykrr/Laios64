@@ -17,6 +17,9 @@ struct fdt_header {
 	u32 size_dt_struct;
 } __attribute__((packed,aligned(__alignof__(u32))));
 #define FDT_HEADER_ENTRIES 10
+#define FDT_HEADER_MAGIC_LE 0xD00DFEED
+#define FDT_HEADER_MAGIC_BE 0xEDFE0DD0
+#define FDT_HEADER_MAGIC_OK(header) (header->magic == FDT_HEADER_MAGIC_BE)
 
 extern const char fdt_header_labels[FDT_HEADER_ENTRIES][18];
 

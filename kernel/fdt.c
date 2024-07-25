@@ -26,6 +26,9 @@ void swap_fdt_struct_endianness(u32 *ptr, u8 entries) {
 }
 
 struct fdt_parser fdt_parser_init(struct fdt_header *header) {
+	if (!FDT_HEADER_MAGIC_OK(header))
+		panic("Corrupt device tree header.");
+
 	struct fdt_parser parser = {
 		.header = header,
 		.node_ptr = NULL,

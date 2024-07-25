@@ -18,5 +18,6 @@ typedef __INT32_TYPE__	i32;
 typedef __INT64_TYPE__	i64;
 
 typedef u64	usize;
+typedef u64	uptr;
 
 #endif
