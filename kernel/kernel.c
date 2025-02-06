@@ -41,28 +41,8 @@ void kmain() {
 	struct fdt_header *fdt_header = (struct fdt_header*) &__fdt_header;
 	print_fdt_header(fdt_header);
 	kputs(DIV);
-	memory_init(fdt_header);
+	page_init(fdt_header);
 	kputs(DIV);
-
-	void *page[4];
-
-	for (usize i = 0; i < 4; i++) {
-		page[i] = page_alloc();
-		kprintf("Page Alloc: %08X\n", page[i]);
-	}
-
-	for (usize i = 0; i < 4; i++) {
-		kprintf("Page Free: %08X\n", page[3-i]);
-		page_free(page[i]);
-	}
-
-	for (usize i = 0; i < 4; i++) {
-		page[i] = page_alloc();
-		kprintf("Page Alloc: %08X\n", page[i]);
-	}
-
-	//page_free(page[i]);
-	//kprintf("Page Free: %08X\n", page[i]);
 
 	kputs(DIV);
 }

@@ -1,7 +1,7 @@
 #include <types.h>
 
-i64 atoi(const char *nstr) {
-	i64 value = 0;
+imax atoi(const char *nstr) {
+	imax value = 0;
 	i8 sign = 1;
 
 	if (*nstr && *nstr == '-') {

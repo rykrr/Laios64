@@ -1,6 +1,6 @@
 ################################################################################
 
-TOOLCHAIN	= aarch64-elf
+TOOLCHAIN	= aarch64-none-elf
 TARGET		= aarch64-unknown-none
 ARCHDIR		= kernel/arch/qemu/virt
 
@@ -95,7 +95,7 @@ DISPLAY	?= :0.0
 SERIAL	= /tmp/serial
 
 QEMU		= DISPLAY=$(DISPLAY) qemu-system-aarch64
-QEMU_ARGS	= -M virt -m 512M -cpu cortex-a72 -kernel $(KERNEL)
+QEMU_ARGS	= -M virt -m 64M -cpu cortex-a72 -kernel $(KERNEL)
 
 ################################################################################
 

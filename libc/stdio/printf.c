@@ -8,7 +8,7 @@
 const char LOWER_HEX_DIGITS[16] = "0123456789abcdef";
 const char UPPER_HEX_DIGITS[16] = "0123456789ABCDEF";
 
-void print_hex(u64 x, i8 width, bool zero_pad, bool uppercase) {
+void print_hex(umax x, i8 width, bool zero_pad, bool uppercase) {
 	#define NIBBLE 4
 	#define NUM_DIGITS 16
 	#define HIGHEST_NIBBLE_SHIFT 60
@@ -47,7 +47,7 @@ void print_hex(u64 x, i8 width, bool zero_pad, bool uppercase) {
 	#undef NIBBLE
 }
 
-void print_decimal(i32 x, i32 width) {
+void print_decimal(imax x, i8 width) {
 	#define NUM_DIGITS 10
 	static char buf[NUM_DIGITS+2] = {[NUM_DIGITS+1] = '\0'};
 	bool negative = x < 0;
@@ -81,7 +81,7 @@ void print_decimal(i32 x, i32 width) {
 	#undef NUM_DIGITS
 }
 
-void print_string(const char *s, i32 width, bool truncate) {
+void print_string(const char *s, i8 width, bool truncate) {
 	bool right_pad = width < 0;
 	usize len = strlen(s);
 
@@ -108,7 +108,7 @@ void printf(const char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
 
-	i32 width = 1;
+	i8 width = 1;
 
 	bool special = false;
 	bool truncate = false;
@@ -132,7 +132,7 @@ void printf(const char *fmt, ...) {
 		switch (*fmt) {
 			case 'x':
 			case 'X': {
-				u64 value = (u64) va_arg(va, u64);
+				umax value = (umax) va_arg(va, umax);
 				print_hex(value, width, zero_pad, *fmt == 'X');
 				break;
 			}
@@ -142,7 +142,7 @@ void printf(const char *fmt, ...) {
 				break;
 			}
 			case 'd': {
-				i32 value = (i32) va_arg(va, i32);
+				imax value = (imax) va_arg(va, imax);
 				print_decimal(value, width);
 				break;
 			}

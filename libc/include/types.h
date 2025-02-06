@@ -19,5 +19,7 @@ typedef __INT64_TYPE__	i64;
 
 typedef u64	usize;
 typedef u64	uptr;
+typedef u64	umax;
+typedef i64	imax;
 
 #endif
