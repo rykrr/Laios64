@@ -12,7 +12,6 @@
 
 #define MEMORY_MAX_RANGES 16
 
-#define FREE_PAGE_MAGIC 0xDEADDEADDEADDEAD
 
 extern struct physical_allocator_header g_physical_page_allocator;
 

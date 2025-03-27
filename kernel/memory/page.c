@@ -97,6 +97,34 @@ void *page_allocator_alloc(struct page_allocator_header *allocator, u8 order) {
 	return node;
 }
 
+/* PANIC IF DOUBLE FREE */
+void page_allocator_double_free_check(
+	const struct page_allocator_header *allocator,
+	const struct page_allocator_node *node,
+	u8 n_pages
+) {
+	struct page_allocator_node *free_node;
+
+	for (usize i = 0; i < n_pages; i++) {
+		#ifdef PAGE_ALLOCATOR_ENABLE_MAGIC_CHECK
+		if (node->magic != PAGE_ALLOCATOR_FREE_MAGIC) {
+			node = (struct page_allocator_node *) ((uptr) node + PAGE_SIZE);
+			continue;
+		}
+		#endif
+
+		for (u8 o = PAGE_ORDER; o < PAGE_ALLOCATOR_MAX_ORDER; o++) {
+			uptr block = ALIGN_DOWN((uptr) node, 1 << o);
+			for (free_node = allocator->head[o]; free_node; free_node = free_node->next) {
+				if (block == (uptr) free_node)
+					panic("FATAL: PAGE DOUBLE-FREE");
+			}
+		}
+
+		node = (struct page_allocator_node *) ((uptr) node + PAGE_SIZE);
+	}
+}
+
 // TODO: Add additional checks to ensure $p is within the allocator's memory range.
 void page_allocator_free_pages(struct page_allocator_header *allocator, void *p, u8 order) {
 	if (!allocator || !p)
@@ -105,22 +133,23 @@ void page_allocator_free_pages(struct page_allocator_header *allocator, void *p,
 	struct page_allocator_node *node = (struct page_allocator_node*) p;
 	struct page_allocator_node *prev_free_ptr, *free_ptr;
 
+	usize n_pages = 1 << (order - PAGE_ORDER);
+
 	if ((uptr) p != ALIGN_DOWN((uptr) p, 1 << order)) {
 		panic("Error: page_allocator_free_pages was passed a pointer\n"
 			  "       that is not aligned to a region of specified order.");
 	}
 
-	// Check all pages for free page magic.
-	// (1 << order) / page_size
-	//1 << order >> page_order
-	printf("Pages %d\n", 1 << (order - PAGE_ORDER));
+	page_allocator_double_free_check(allocator, node, n_pages);
 
-	if (node->magic == PAGE_ALLOCATOR_FREE_MAGIC) {
-		for (u8 o = PAGE_ORDER; o < PAGE_ALLOCATOR_MAX_ORDER; o++) {
-			uptr b = ALIGN_DOWN((uptr) p, 1 << o);
-			for (free_ptr = allocator->head[o]; free_ptr; free_ptr = free_ptr->next) {
-				if (b == (uptr) free_ptr)
-					panic("FATAL: PAGE DOUBLE-FREE");
+	for (usize i = 0; i < (1 << (order - PAGE_ORDER)); i++) {
+		if (node->magic == PAGE_ALLOCATOR_FREE_MAGIC) {
+			for (u8 o = PAGE_ORDER; o < PAGE_ALLOCATOR_MAX_ORDER; o++) {
+				uptr b = ALIGN_DOWN((uptr) p, 1 << o);
+				for (free_ptr = allocator->head[o]; free_ptr; free_ptr = free_ptr->next) {
+					if (b == (uptr) free_ptr)
+						panic("FATAL: PAGE DOUBLE-FREE");
+				}
 			}
 		}
 	}
@@ -175,6 +204,13 @@ void page_allocator_free_pages(struct page_allocator_header *allocator, void *p,
 	// Add page(s) to free list.
 	node->next = allocator->head[current_order];
 	allocator->head[current_order] = node;
+
+	// Mark all pages as free.
+	free_ptr = node;
+	for (usize i = 0; i < (1 << (current_order - PAGE_ORDER)); i++) {
+		free_ptr = (struct page_allocator_node *) ((uptr) free_ptr + PAGE_SIZE);
+		free_ptr->magic = PAGE_ALLOCATOR_FREE_MAGIC;
+	}
 }
 
 void page_allocator_init(
@@ -197,7 +233,6 @@ void page_allocator_init(
 	kprintf("Setting up allocator for %08X - %08X\n", start, end);
 
 	// Initialize allocator structure.
-	struct page_allocator_node *head = NULL;
 	*allocator = (struct page_allocator_header) {
 		.n_bytes = 0,
 		.n_free_bytes = 0,
@@ -264,7 +299,6 @@ void page_allocator_init(
 		}
 		else if (allocator->head[current_order]) {
 			new_node->next = allocator->head[current_order];
-			//head = new_node;
 		}
 
 		allocator->n_bytes += current_size;
