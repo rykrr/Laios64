@@ -2,11 +2,8 @@
 #include <kernel/stdio.h>
 #include <kernel/memory.h>
 #include <kernel/platform.h>
-#include <endian.h>
 
 #define __MODULE_NAME__ "memory"
-
-struct memory_page_info global_page_info;
 
 usize memory_get_ranges(struct fdt_header *header, struct fdt_memory_range *ranges, usize len) {
 	usize nranges = 0;
@@ -24,132 +21,99 @@ usize memory_get_ranges(struct fdt_header *header, struct fdt_memory_range *rang
 usize memory_get_rsvlist(struct fdt_header *header, struct fdt_memory_range *rsvlist, usize len) {
 	rsvlist[0] = (struct fdt_memory_range) {
 		.address = (uptr) RAM_START,
-		.size = ALIGN_NEXT_PAGE(RAM_PRELUDE_SIZE),
+		.size = ALIGN_UP_PAGE(RAM_PRELUDE_SIZE),
 	};
 	return fdt_parser_mem_rsvlist(header, rsvlist+1, MEMORY_MAX_RANGES) + 1;
 }
 
-void page_init_range(
-	uptr address,
-	usize size,
-	struct fdt_memory_range *rsvlist,
-	usize nrsvs
-) {
-	// TODO: Handle case where address is not aligned by skipping unaligned pages.
-	if (address != ALIGN_DOWN_PAGE(address))
-		panic("Memory range not aligned to page boundary.");
+struct fdt_memory_range *range_has_rsv(struct fdt_memory_range range, struct fdt_memory_range *rsvlist, usize nrsvs) {
+	uptr start = range.address;
+	uptr end = start + range.size;
 
-	// Assuming rsvlist is sorted by address, skip reservations before range.
-	while (nrsvs && ALIGN_DOWN_PAGE(rsvlist->address) < address) {
+	for (; nrsvs > 0; nrsvs--) {
+		uptr rsv_start = rsvlist->address;
+		uptr rsv_end = rsv_start + rsvlist->size;
+		#define in_range(value) (rsv_start <= value && value < rsv_end)
+
+		if (in_range(start) || in_range(end))
+			return rsvlist;
+
+		#undef in_range
 		rsvlist++;
-		nrsvs--;
 	}
 
-	usize total_pages = ALIGN_NEXT_PAGE(size) >> PAGE_SHIFT;
-	uptr start_page = address;
-	uptr end_page = start_page + (total_pages * PAGE_SIZE);
-
-	uptr current_page = start_page;
-	struct page *prev_page = global_page_info.next_free_page;
-
-	while (current_page < end_page) {
-		uptr next_rsv_start = 0;
-		uptr next_rsv_end = 0;
-
-		if (nrsvs) {
-			next_rsv_start = ALIGN_DOWN_PAGE(rsvlist->address);
-			next_rsv_end = next_rsv_start + ALIGN_NEXT_PAGE(rsvlist->size);
-
-			// If the next reservation is outside of the range, ignore remaining.
-			if (end_page < next_rsv_end)
-				nrsvs = 0;
-		}
-
-		usize pages_to_init = (end_page - current_page) >> PAGE_SHIFT;
-
-		if (nrsvs) {
-			if (current_page < next_rsv_start) {
-				// Calculate # of pages between current page and rsvlist pages.
-				pages_to_init = (next_rsv_start - current_page) >> PAGE_SHIFT;
-			}
-			else {
-				current_page = next_rsv_end;
-				pages_to_init = 0;
-				rsvlist++;
-				nrsvs--;
-			}
-		}
-
-		for (usize i = 0; i < pages_to_init; i++) {
-			struct page *page = (struct page*) current_page;
-			*page = (struct page) {
-				.next_page = prev_page,
-				.self = page,
-				.magic = FREE_PAGE_MAGIC,
-			};
-			prev_page = (struct page*) current_page;
-			current_page += PAGE_SIZE;
-		}
-
-		global_page_info.n_free_pages += pages_to_init;
-	}
-
-	global_page_info.n_pages += total_pages;
-	global_page_info.next_free_page = prev_page;
+	return NULL;
 }
 
-void page_init(struct fdt_header *header) {
-	kputs("Initializing physical pages...");
+void memory_init(struct fdt_header *header) {
+	kputs("Initializing page allocator...");
 
 	if (!FDT_HEADER_MAGIC_OK(header))
 		panic("Corrupt device tree header.");
 
-	global_page_info = (struct memory_page_info) {
+	#if 0
+	g_page_list_allocator = (struct page_list_allocator_header) {
 		.n_pages = 0,
 		.n_free_pages = 0,
 		.next_free_page = NULL,
 	};
+	#endif
 
 	struct fdt_memory_range ranges[MEMORY_MAX_RANGES];
 	usize nranges = memory_get_ranges(header, ranges, MEMORY_MAX_RANGES);
+	usize total_bytes = 0;
 
-	uptr bytes = 0;
-
+	kprintf("\n");
 	kprintf("Found %d memory range(s)\n", nranges);
 	for (usize i = 0; i < nranges; i++) {
-		kprintf("   %016X + %08X\n", ranges[i].address, ranges[i].size);
-		bytes += ranges[i].size;
+		kprintf("    %016X + %08X\n", ranges[i].address, ranges[i].size);
+		total_bytes += ranges[i].size;
 	}
+	kprintf("\n");
 
 	struct fdt_memory_range rsvlist[MEMORY_MAX_RANGES];
 	usize nrsvs = memory_get_rsvlist(header, rsvlist, MEMORY_MAX_RANGES);
 
 	kprintf("Found %d memory reservation(s)\n", nrsvs);
 	for (usize i = 0; i < nrsvs; i++)
-		kprintf("   %016X + %08X\n", rsvlist[i].address, rsvlist[i].size);
+		kprintf("    %016X + %08X\n", rsvlist[i].address, rsvlist[i].size);
+	kprintf("\n");
 
-	kputs("Setting up pages...");
-
+	//page_list_allocator_init_range(ranges[i].address, ranges[i].size, rsvlist, nrsvs);
 	for (usize i = 0; i < nranges; i++)
-		page_init_range(ranges[i].address, ranges[i].size, rsvlist, nrsvs);
+		page_allocator_init(
+			&g_page_allocator,
+			ranges[i],
+			rsvlist,
+			nrsvs);
+	kputs("");
+	page_allocator_print_status(&g_page_allocator);
 
 	#define print_row(prefix, size) \
 		kprintf("%-6s | %8d | %5d | %10d\n",\
 			prefix,\
-			size >> PAGE_SHIFT,\
+			size >> PAGE_ORDER,\
 			size >> 20,\
 			size >> 10)
 
 	kputs("");
 	kprintf("%-6s | %8s | %5s | %10s\n", "Memory", "Pages", "~MiB", "KiB");
 	kprintf("------ | -------- | ----- | ----------\n");
-	print_row("Free", global_page_info.n_free_pages << PAGE_SHIFT);
-	print_row("Used",
-			(global_page_info.n_pages - global_page_info.n_free_pages) << PAGE_SHIFT);
-	print_row("Total", global_page_info.n_pages << PAGE_SHIFT);
+	print_row("Free", g_page_allocator.n_free_bytes);
+	print_row("Used", (g_page_allocator.n_bytes - g_page_allocator.n_free_bytes));
+	print_row("Total", g_page_allocator.n_bytes);
 	kputs("");
 
 	#undef print_row
 }
+
+inline void *page_alloc() {
+	return page_allocator_alloc(&g_page_allocator, PAGE_ORDER);
+}
+
+inline void page_free(void *p) {
+	page_allocator_free_pages(&g_page_allocator, p, PAGE_ORDER);
+}
+
 
 #undef __MODULE_NAME__
