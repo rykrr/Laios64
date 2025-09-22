@@ -51,7 +51,7 @@ void memory_init(struct fdt_header *header) {
 	if (!FDT_HEADER_MAGIC_OK(header))
 		panic("Corrupt device tree header.");
 
-	#if 0
+	#if 0 /* DISABLED */
 	g_page_list_allocator = (struct page_list_allocator_header) {
 		.n_pages = 0,
 		.n_free_pages = 0,

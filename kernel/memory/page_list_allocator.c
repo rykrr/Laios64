@@ -1,4 +1,9 @@
-#if 0
+#ifdef USE_PAGE_LIST_ALLOCATOR
+
+#include <kernel/bios.h>
+#include <kernel/stdio.h>
+#include <kernel/memory.h>
+#include <types.h>
 
 void page_list_allocator_init_range(
 	struct fdt_memory_range range,

@@ -14,6 +14,7 @@
 #define PAGE_ALLOCATOR_MIN_SIZE (1 << PAGE_ALLOCATOR_MIN_ORDER)
 
 #define PAGE_ALLOCATOR_MAX_ORDER 32
+#define PAGE_ALLOCATOR_MAX_SIZE (1 << PAGE_ALLOCATOR_MAX_ORDER)
 
 #define PAGE_ALLOCATOR_FREE_MAGIC 0xDEAD
 
@@ -28,7 +29,6 @@ struct page_allocator_node {
 struct page_allocator_header {
 	usize n_bytes;
 	usize n_free_bytes;
-	u8 min_order;
 	struct page_allocator_node *head[PAGE_ALLOCATOR_MAX_ORDER];
 };
 

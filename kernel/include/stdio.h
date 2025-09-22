@@ -5,7 +5,7 @@
 
 #ifdef __LIBK__
 #define kprintf(fmt, ...) \
-	printf("%-8s | " fmt, __MODULE_NAME__, ##__VA_ARGS__)
+	printf("%-16s | " fmt, __MODULE_NAME__, ##__VA_ARGS__)
 
 #define kputs(s) kprintf("%s\n", s)
 #endif

@@ -1,26 +1,14 @@
 #include <kernel/bios.h>
 #include <kernel/stdio.h>
 #include <kernel/memory.h>
+#include <stdlib.h>
 
-#define __MODULE_NAME__ "page"
+#define __MODULE_NAME__ "page_allocator"
+#define _kprintf(_, ...)
+#define _printf(_, ...)
+
 
 struct page_allocator_header g_page_allocator;
-
-u8 find_msb(u64 x) {
-	u8 b = 0;
-	while (x >>= 1)
-		b++;
-	return b;
-}
-
-void find_rank(usize x, usize *rank, usize *count) {
-	*rank = 0;
-	while (!(x & 1)) {
-		x >>= 1;
-		(*rank)++;
-	}
-	*count = x;
-}
 
 void page_allocator_print_status(struct page_allocator_header *allocator) {
 	struct page_allocator_node *node = NULL;
@@ -164,7 +152,7 @@ void page_allocator_free_pages(struct page_allocator_header *allocator, void *p,
 	u8 current_order = order;
 	usize current_size = 1 << order;
 
-	kprintf("Freeing pages @ %X (%d)\n", node, current_order);
+	_kprintf("Freeing pages @ %X (%d)\n", node, current_order);
 	while (current_order < PAGE_ALLOCATOR_MAX_ORDER - 1) {
 		uptr buddy = ALIGN_DOWN((uptr) node, current_size << 1);
 		uptr align = buddy;
@@ -176,7 +164,7 @@ void page_allocator_free_pages(struct page_allocator_header *allocator, void *p,
 		free_ptr = allocator->head[current_order];
 
 		// Search for buddy in current order.
-		kprintf("Aligned to %X; Searching for buddeh %X in %d...", align, buddy, current_order);
+		_kprintf("Aligned to %X; Searching for buddeh %X in %d...", align, buddy, current_order);
 		for (free_ptr = allocator->head[current_order]; free_ptr; free_ptr = free_ptr->next) {
 			if (buddy == free_ptr)
 				break;
@@ -184,12 +172,12 @@ void page_allocator_free_pages(struct page_allocator_header *allocator, void *p,
 		}
 
 		if (!free_ptr) {
-			printf("Failed.\n");
+			_printf("Failed.\n");
 			break;
 		}
 
 		// if buddy is free, remove buddy from free list.
-		printf("OK\n", current_order, (uptr) free_ptr);
+		_printf("OK\n", current_order, (uptr) free_ptr);
 		if (prev_free_ptr)
 			prev_free_ptr->next = free_ptr->next;
 		else
@@ -200,7 +188,8 @@ void page_allocator_free_pages(struct page_allocator_header *allocator, void *p,
 		node = (struct page_allocator_node *) ALIGN_DOWN((uptr) node, current_size);
 	}
 
-	kprintf("Adding to free list at %d\n", current_order);
+	_kprintf("Adding to free list at %d\n", current_order);
+
 	// Add page(s) to free list.
 	node->next = allocator->head[current_order];
 	allocator->head[current_order] = node;
@@ -222,7 +211,7 @@ void page_allocator_init(
 	kprintf("Initializing physical memory allocator...\n");
 
 	// Largest power of two that can fit within the specified range.
-	u8 max_order = find_msb(range.size);
+	u8 max_order = msb(range.size);
 
 	uptr start = range.address;
 	uptr end = start + range.size;
@@ -305,5 +294,8 @@ void page_allocator_init(
 		allocator->n_free_bytes += current_size;
 	}
 }
+
+#undef _printf
+#undef _kprintf
 
 #undef __MODULE_NAME__
